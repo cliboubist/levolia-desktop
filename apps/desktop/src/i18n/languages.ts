@@ -128,3 +128,23 @@ export function isSupportedLocaleValue(value: unknown): boolean {
 export function localeConfigValue(locale: Locale): string {
   return LOCALE_OPTIONS.find(item => item.id === locale)?.configValue ?? DEFAULT_LOCALE
 }
+
+/**
+ * Locale to use before any saved preference is known (first launch, config
+ * unreachable). Follows the operating system language when the app ships a
+ * matching locale, otherwise English.
+ */
+export function detectSystemLocale(): Locale {
+  const nav = typeof navigator === 'undefined' ? undefined : navigator
+  const candidates = [...(nav?.languages ?? []), nav?.language].filter((v): v is string => Boolean(v))
+
+  for (const candidate of candidates) {
+    const mapped = LOCALE_ALIASES[normalize(candidate)] ?? LOCALE_ALIASES[normalize(candidate.split(/[-_]/)[0] ?? '')]
+
+    if (mapped) {
+      return mapped
+    }
+  }
+
+  return DEFAULT_LOCALE
+}
