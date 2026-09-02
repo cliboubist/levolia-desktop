@@ -96,3 +96,36 @@ L'app conserve la connexion dans son dossier de données utilisateur
   Le script `scripts/notarize.mjs` attend les identifiants Apple en variables d'environnement.
 - Compléter la traduction française au-delà des écrans d'accueil et de connexion.
 - Construire et tester un installeur réel sur macOS et Windows contre un VPS de démonstration.
+
+## Suivre les évolutions de Nous Research
+
+Le dépôt a deux remotes : `origin` (votre dépôt) et `upstream` (Nous Research).
+La branche `main` suit `upstream/main` à l'identique ; la branche `levolia`
+porte les modifications Levolia.
+
+Pour intégrer une nouvelle version amont :
+
+```bash
+bash scripts/levolia/sync-upstream.sh
+```
+
+Le script fusionne `main` dans `levolia`. Les fichiers de textes (locales et
+tests de chaînes) sont pris tels quels chez Nous Research puis rebrandés par
+`scripts/levolia/rebrand.py`, qui est rejouable à volonté. Seuls les conflits
+sur du code structurel demandent une résolution manuelle ; ils sont listés en
+sortie. Ensuite :
+
+```bash
+npm install
+cd apps/desktop && npm run typecheck && npm run test:ui
+```
+
+Points de vigilance à chaque synchronisation :
+
+- Vérifier que les gardes Levolia dans `apps/desktop/electron/main.ts`
+  (`LEVOLIA_REMOTE_ONLY`, `LEVOLIA_SELF_UPDATE_DISABLED`) sont toujours en place.
+- Relancer l'app construite sur un profil vierge : elle doit s'arrêter sur le
+  formulaire de connexion sans lancer de processus local.
+- Mettre à jour l'agent sur les VPS clients avec la même version amont, car
+  l'app contrôle l'écart de version avec le serveur.
+- Compléter `apps/desktop/src/i18n/fr.ts` si de nouveaux écrans sont apparus.
