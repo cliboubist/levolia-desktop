@@ -15,7 +15,7 @@ import type {
   DesktopBootstrapState
 } from '@/global'
 import { useI18n } from '@/i18n'
-import { AlertCircle, ChevronDown, ChevronRight, Globe, iconSize, Loader2, Monitor } from '@/lib/icons'
+import { ChevronDown, ChevronRight, Globe, iconSize } from '@/lib/icons'
 import { capitalize } from '@/lib/text'
 import { cn } from '@/lib/utils'
 
@@ -350,16 +350,6 @@ export function DesktopInstallOverlay({ enabled = true }: DesktopInstallOverlayP
   // same root. Deriving it beats clearing it in an effect: the choice paints
   // as soon as the first snapshot commits, and a click landing before such an
   // effect flushed would have its error wiped before it ever rendered.
-  const [localStart, setLocalStart] = useState<{
-    root: string | null
-    starting: boolean
-    error: string | null
-  }>({ root: null, starting: false, error: null })
-
-  const activeRoot = state.setupChoice?.activeRoot ?? null
-  const forActiveRoot = localStart.root === activeRoot
-  const localStarting = forActiveRoot && localStart.starting
-  const localStartError = forActiveRoot ? localStart.error : null
 
   // Mount logic: show whenever a bootstrap is in flight, completed-with-error,
   // or actively running with a manifest. Hide entirely after a successful
@@ -397,76 +387,8 @@ export function DesktopInstallOverlay({ enabled = true }: DesktopInstallOverlayP
   }
 
   if (state.setupChoice) {
-    return (
-      <div className="fixed inset-0 z-(--z-setup) flex items-center justify-center bg-background/90 p-4 backdrop-blur-md">
-        <div className="w-full max-w-2xl rounded-xl border border-(--stroke-nous) bg-card p-8 shadow-nous">
-          <div className="flex items-start gap-4">
-            <BrandMark className="size-11 shrink-0" />
-            <div className="min-w-0">
-              <h2 className="text-xl font-semibold tracking-tight">{copy.setupChoiceTitle}</h2>
-              <p className="mt-1.5 text-sm text-muted-foreground">{copy.setupChoiceDesc}</p>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <button
-              className="rounded-lg border border-(--ui-stroke-tertiary) bg-(--ui-bg-quinary) p-4 text-left transition hover:bg-(--chrome-action-hover)"
-              onClick={() => setRemoteOpen(true)}
-              type="button"
-            >
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <Globe className="size-4 text-muted-foreground" />
-                <span>{copy.connectExistingTitle}</span>
-              </div>
-              <p className="mt-2 text-sm leading-5 text-muted-foreground">{copy.connectExistingDesc}</p>
-            </button>
-
-            <button
-              className="rounded-lg border border-(--ui-stroke-tertiary) bg-(--ui-bg-quinary) p-4 text-left transition hover:bg-(--chrome-action-hover) disabled:cursor-wait disabled:opacity-60"
-              disabled={localStarting}
-              onClick={async () => {
-                setLocalStart({ root: activeRoot, starting: true, error: null })
-
-                try {
-                  const desktop = window.hermesDesktop
-
-                  if (!desktop || typeof desktop.continueBootstrapLocal !== 'function') {
-                    throw new Error(copy.localStartUnavailable)
-                  }
-
-                  await desktop.continueBootstrapLocal()
-                } catch (err) {
-                  setLocalStart({ root: activeRoot, starting: false, error: errorMessage(err) })
-                }
-              }}
-              type="button"
-            >
-              <div className="flex items-center gap-2 text-sm font-medium">
-                {localStarting ? (
-                  <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                ) : (
-                  <Monitor className="size-4 text-muted-foreground" />
-                )}
-                <span>{copy.installLocalTitle}</span>
-              </div>
-              <p className="mt-2 text-sm leading-5 text-muted-foreground">{copy.installLocalDesc}</p>
-            </button>
-          </div>
-
-          {localStartError ? (
-            <div className="mt-4 flex items-start gap-2 text-sm text-destructive">
-              <AlertCircle className="mt-0.5 size-4 shrink-0" />
-              <span>{localStartError}</span>
-            </div>
-          ) : null}
-
-          <div className="mt-6 text-xs text-muted-foreground">
-            {copy.installTo}{' '}
-            <code className="font-mono text-(--ui-text-secondary)">{state.setupChoice.activeRoot}</code>
-          </div>
-        </div>
-      </div>
-    )
+    // Levolia: remote-only. The local-install path is intentionally not offered.
+    return <FirstRunRemoteForm hideBack onBack={() => setRemoteOpen(false)} />
   }
 
   // Unsupported-platform branch: macOS/Linux packaged builds hit this when

@@ -14,13 +14,14 @@ type ProbeStatus = 'idle' | 'probing' | 'done' | 'error'
 
 interface FirstRunRemoteFormProps {
   onBack: () => void
+  hideBack?: boolean
 }
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err || 'Unknown error')
 }
 
-export function FirstRunRemoteForm({ onBack }: FirstRunRemoteFormProps) {
+export function FirstRunRemoteForm({ onBack, hideBack = false }: FirstRunRemoteFormProps) {
   const { t } = useI18n()
   const copy = t.install
   const [remoteUrl, setRemoteUrl] = useState('')
@@ -321,9 +322,13 @@ export function FirstRunRemoteForm({ onBack }: FirstRunRemoteFormProps) {
         </div>
 
         <div className="mt-7 flex flex-wrap items-center justify-between gap-3">
-          <Button disabled={applying} onClick={onBack} size="sm" variant="ghost">
-            {copy.backToSetup}
-          </Button>
+          {hideBack ? (
+            <span />
+          ) : (
+            <Button disabled={applying} onClick={onBack} size="sm" variant="ghost">
+              {copy.backToSetup}
+            </Button>
+          )}
           <div className="flex items-center gap-2">
             <Button
               disabled={testing || applying || !canTest}
