@@ -104,15 +104,15 @@ describe('ConnectionsRegistrySection', () => {
     })
   })
 
-  it('offers every kind on create and disables Local while the managed entry exists', async () => {
+  it('offers only remote and SSH kinds on create', async () => {
     render(<ConnectionsRegistrySection />)
 
     await waitFor(() => expect(screen.getByText('Homelab')).toBeTruthy())
     fireEvent.click(screen.getByText('Add connection'))
 
-    const localKind = screen.getByRole('button', { name: 'Local' }) as HTMLButtonElement
-    expect(localKind.disabled).toBe(true)
-    expect(screen.getByRole('button', { name: 'Nous Cloud' })).toBeTruthy()
+    // Levolia: only hosted kinds (remote, SSH) can be created by clients.
+    expect(screen.queryByRole('button', { name: 'Local' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Nous Cloud' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Remote gateway' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'SSH' })).toBeTruthy()
   })

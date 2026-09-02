@@ -8,16 +8,16 @@ import { Tip } from '@/components/ui/tooltip'
 import type { DesktopAuthProvider, DesktopCloudAgent, DesktopCloudOrg, DesktopConnectionProbeResult } from '@/global'
 import { useI18n } from '@/i18n'
 import { ExternalLink } from '@/lib/external-link'
+import type {
+  Monitor} from '@/lib/icons';
 import {
   AlertCircle,
   Check,
-  Cloud,
   FileText,
   Globe,
   HelpCircle,
   Loader2,
   LogIn,
-  Monitor,
   RefreshCw,
   Terminal
 } from '@/lib/icons'
@@ -1104,23 +1104,8 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
         <div className="text-[length:var(--conversation-caption-font-size)] font-medium text-(--ui-text-secondary)">
           {g.modeTitle}
         </div>
-        <div className="grid auto-rows-fr grid-cols-1 gap-2 sm:grid-cols-2 min-[72rem]:grid-cols-4">
-          <ModeCard
-            active={state.mode === 'local'}
-            description={g.localDesc}
-            disabled={state.envOverride}
-            icon={Monitor}
-            onSelect={() => setState(current => ({ ...current, mode: 'local' }))}
-            title={g.localTitle}
-          />
-          <ModeCard
-            active={state.mode === 'cloud'}
-            description={g.cloudDesc}
-            disabled={state.envOverride}
-            icon={Cloud}
-            onSelect={() => setState(current => ({ ...current, mode: 'cloud' }))}
-            title={g.cloudTitle}
-          />
+        <div className="grid auto-rows-fr grid-cols-1 gap-2 sm:grid-cols-2">
+          {/* Levolia: local and Nous Cloud modes are not offered to clients. */}
           <ModeCard
             active={state.mode === 'remote'}
             description={g.remoteDesc}

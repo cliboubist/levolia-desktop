@@ -2969,8 +2969,24 @@ async function resolveHealedBranch(updateRoot, branch) {
   return 'main'
 }
 
+// Levolia: desktop self-update against the upstream Nous Research checkout is
+// disabled. Clients receive new builds through Levolia installers; the agent
+// itself is updated on the hosted server.
+const LEVOLIA_SELF_UPDATE_DISABLED = true
+
 async function checkUpdates() {
   const updateRoot = resolveUpdateRoot()
+
+  if (LEVOLIA_SELF_UPDATE_DISABLED) {
+    return {
+      supported: false,
+      reason: 'disabled-by-brand',
+      message: 'Updates are delivered through Levolia installers. The agent is updated on your Levolia server.',
+      hermesRoot: updateRoot,
+      branch: readDesktopUpdateConfig().branch
+    }
+  }
+
   let { branch } = readDesktopUpdateConfig()
   const gitDir = path.join(updateRoot, '.git')
 
@@ -6660,17 +6676,11 @@ function sendWindowStateChanged(nextIsFullscreen?: boolean, target = mainWindow)
 function buildApplicationMenu() {
   const template = []
 
-  const checkForUpdatesItem = {
-    label: 'Check for Updates…',
-    click: () => sendOpenUpdatesRequested()
-  }
-
   if (IS_MAC) {
     template.push({
       label: APP_NAME,
       submenu: [
         { label: `About ${APP_NAME}`, click: () => showAboutPanelFresh() },
-        checkForUpdatesItem,
         { type: 'separator' },
         { role: 'services' },
         { type: 'separator' },
@@ -6785,7 +6795,7 @@ function buildApplicationMenu() {
   template.push({
     label: 'Help',
     role: 'help',
-    submenu: [checkForUpdatesItem]
+    submenu: [{ label: `About ${APP_NAME}`, click: () => showAboutPanelFresh() }]
   })
 
   return Menu.buildFromTemplate(template)

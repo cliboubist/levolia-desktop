@@ -40,10 +40,10 @@ describe('GatewaySettings', () => {
     const { GatewaySettings } = await import('./gateway-settings')
 
     render(<GatewaySettings />)
-    expect(await screen.findByText('Local gateway')).toBeTruthy()
-    expect(
-      screen.getByText('Start a private Levolia backend on localhost. This is the default and works offline.')
-    ).toBeTruthy()
+    expect(await screen.findByText('Remote gateway')).toBeTruthy()
+    // Levolia: local and Nous Cloud modes are not offered to clients.
+    expect(screen.queryByText('Local gateway')).toBeNull()
+    expect(screen.queryByText('Nous Cloud')).toBeNull()
 
     // The page manages the machine's gateway connections; it must load the
     // global config, never a per-profile override.

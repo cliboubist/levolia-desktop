@@ -12,16 +12,23 @@ faciliter les fusions.
 
 - `apps/desktop/package.json` : nom produit, identifiant `ai.levolia.desktop`,
   nom des installeurs, textes macOS, schéma de lien profond `levolia://`.
-- `apps/desktop/electron/main.ts` : schéma de lien profond aligné (`levolia`, `levolia-dev`).
+- `apps/desktop/electron/main.ts` : schéma de lien profond aligné (`levolia`, `levolia-dev`) ;
+  auto-mise à jour désactivée (`LEVOLIA_SELF_UPDATE_DISABLED`) et entrée de menu
+  « Check for Updates » retirée. Les nouvelles versions passent par les installeurs Levolia.
+- `apps/desktop/assets/icon.{png,icns,ico}`, `public/apple-touch-icon.png`,
+  `public/levolia-mark.png`, `public/levolia-logo.png` : icônes générées depuis le logo Levolia.
+- `apps/desktop/src/components/brand-mark.tsx` : logo Levolia dans l'interface.
 - `apps/desktop/src/components/desktop-install-overlay.tsx` : le premier lancement
   affiche directement le formulaire de connexion distante. L'option
   « installer en local » n'est plus proposée.
 - `apps/desktop/src/components/first-run-remote-form.tsx` : bouton Retour masquable.
-- `apps/desktop/src/components/brand-mark.tsx` : logo remplacé par un marqueur
-  Levolia provisoire (à remplacer par le vrai logo).
-- `apps/desktop/src/i18n/{en,ar,ja}.ts` : « Hermes » remplacé par « Levolia » dans
-  les textes visibles, textes d'onboarding réécrits (adresse du serveur, jeton d'accès).
-  Les mentions du service « Nous Cloud » sont conservées telles quelles.
+- `apps/desktop/src/app/settings/gateway-settings.tsx` et `connections-registry.tsx` :
+  seuls les modes « serveur distant » et « SSH » sont proposés. Local et Nous Cloud sont masqués.
+- `apps/desktop/src/i18n/fr.ts` : locale française (partielle : accueil, connexion,
+  démarrage, actions communes ; le reste retombe sur l'anglais). Sélectionnée
+  automatiquement sur un système en français.
+- `apps/desktop/src/i18n/{en,ar,ja,zh,zh-hant,ru}.ts` : « Hermes » remplacé par
+  « Levolia » dans les textes visibles. Les mentions « Nous Cloud » sont conservées.
 - `apps/desktop/index.html` : titre de fenêtre.
 
 ## Construire l'app
@@ -82,11 +89,7 @@ L'app conserve la connexion dans son dossier de données utilisateur
 
 ## Reste à faire
 
-- Remplacer le logo provisoire : `apps/desktop/assets/icon.{icns,ico,png}`,
-  `apps/desktop/public/` et le composant `brand-mark.tsx`.
 - Signature et notarisation des binaires (certificats Apple Developer et Windows).
-- Mécanisme de mise à jour de l'app : il pointe encore vers le dépôt Nous Research
-  (`apps/desktop/electron/update-remote.ts`). À rediriger vers un dépôt Levolia ou à désactiver.
-- Traduction française de l'interface : le desktop n'embarque que en, ar et ja.
-- Masquer dans les réglages les entrées « Nous Cloud » et « installation locale »
-  qui ne concernent pas les clients Levolia.
+  Le script `scripts/notarize.mjs` attend les identifiants Apple en variables d'environnement.
+- Compléter la traduction française au-delà des écrans d'accueil et de connexion.
+- Construire et tester un installeur réel sur macOS et Windows contre un VPS de démonstration.
