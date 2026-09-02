@@ -1,0 +1,60 @@
+name: Build Levolia for Windows
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-levolia-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-windows:
+    name: Windows x64 installer
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 26
+          cache: npm
+
+      - name: Install npm 12
+        run: npm install --global npm@12
+
+      - name: Install dependencies
+        uses: ./.github/actions/retry
+        with:
+          command: npm ci
+
+      - name: Build NSIS installer
+        working-directory: apps/desktop
+        env:
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+        run: |
+          npm run build
+          npm run builder -- --win nsis -c.win.signAndEditExecutable=true
+
+      - name: Report Authenticode status
+        shell: pwsh
+        run: |
+          Get-ChildItem apps/desktop/release/*.exe | ForEach-Object {
+            $signature = Get-AuthenticodeSignature $_.FullName
+            Write-Host "$($_.Name): $($signature.Status)"
+          }
+
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: Levolia-Windows-x64
+          path: apps/desktop/release/*.exe
+          if-no-files-found: error
+          retention-days: 30
