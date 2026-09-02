@@ -1,5 +1,7 @@
 name: Build Levolia for Windows
 
+# Run manually from GitHub Actions to produce the public Windows installer.
+
 on:
   workflow_dispatch:
 
