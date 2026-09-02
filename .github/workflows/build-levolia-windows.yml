@@ -43,7 +43,7 @@ jobs:
           WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
         run: |
           npm run build
-          npm run builder -- --win nsis -c.win.signAndEditExecutable=true
+          npm run builder -- --win nsis --config.win.signAndEditExecutable=true
 
       - name: Report Authenticode status
         shell: pwsh
