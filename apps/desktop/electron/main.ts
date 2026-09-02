@@ -2974,6 +2974,9 @@ async function resolveHealedBranch(updateRoot, branch) {
 // itself is updated on the hosted server.
 const LEVOLIA_SELF_UPDATE_DISABLED = true
 
+// Levolia: client machines only ever connect to a hosted server.
+const LEVOLIA_REMOTE_ONLY = process.env.HERMES_DESKTOP_ALLOW_LOCAL !== '1'
+
 async function checkUpdates() {
   const updateRoot = resolveUpdateRoot()
 
@@ -4812,6 +4815,27 @@ function resolveHermesBackend(backendArgs) {
 
     if (backend) {
       return backend
+    }
+  }
+
+  // Levolia: never discover or spawn a local Hermes runtime on client
+  // machines. Returning the bootstrap-needed sentinel routes first launch to
+  // the remote connection form; a saved remote connection never reaches this
+  // resolver. The HERMES_DESKTOP_HERMES_ROOT developer override above still
+  // works for local development.
+  if (LEVOLIA_REMOTE_ONLY) {
+    return {
+      kind: 'bootstrap-needed',
+      label: 'Levolia connects to a hosted server; no local runtime is used',
+      command: null,
+      args: backendArgs,
+      bootstrap: true,
+      env: {},
+      shell: false,
+      activeRoot: ACTIVE_HERMES_ROOT,
+      installStamp: INSTALL_STAMP,
+      isPackaged: IS_PACKAGED,
+      platform: process.platform
     }
   }
 

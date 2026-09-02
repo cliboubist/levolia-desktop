@@ -15,6 +15,9 @@ faciliter les fusions.
 - `apps/desktop/electron/main.ts` : schéma de lien profond aligné (`levolia`, `levolia-dev`) ;
   auto-mise à jour désactivée (`LEVOLIA_SELF_UPDATE_DISABLED`) et entrée de menu
   « Check for Updates » retirée. Les nouvelles versions passent par les installeurs Levolia.
+  Mode strictement distant (`LEVOLIA_REMOTE_ONLY`) : l'app ne cherche jamais de
+  runtime Hermes local, même s'il en existe un sur la machine. Pour le développement,
+  `HERMES_DESKTOP_ALLOW_LOCAL=1` ou `HERMES_DESKTOP_HERMES_ROOT=<checkout>` rétablissent le mode local.
 - `apps/desktop/assets/icon.{png,icns,ico}`, `public/apple-touch-icon.png`,
   `public/levolia-mark.png`, `public/levolia-logo.png` : icônes générées depuis le logo Levolia.
 - `apps/desktop/src/components/brand-mark.tsx` : logo Levolia dans l'interface.
