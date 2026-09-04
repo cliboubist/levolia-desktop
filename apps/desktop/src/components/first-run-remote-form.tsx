@@ -15,13 +15,21 @@ type ProbeStatus = 'idle' | 'probing' | 'done' | 'error'
 interface FirstRunRemoteFormProps {
   onBack: () => void
   hideBack?: boolean
+  /** Levolia: offer the local install as a secondary action (computer use). */
+  onInstallLocal?: () => void
+  installingLocal?: boolean
 }
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err || 'Unknown error')
 }
 
-export function FirstRunRemoteForm({ onBack, hideBack = false }: FirstRunRemoteFormProps) {
+export function FirstRunRemoteForm({
+  onBack,
+  hideBack = false,
+  onInstallLocal,
+  installingLocal = false
+}: FirstRunRemoteFormProps) {
   const { t } = useI18n()
   const copy = t.install
   const [remoteUrl, setRemoteUrl] = useState('')
@@ -322,7 +330,12 @@ export function FirstRunRemoteForm({ onBack, hideBack = false }: FirstRunRemoteF
         </div>
 
         <div className="mt-7 flex flex-wrap items-center justify-between gap-3">
-          {hideBack ? (
+          {onInstallLocal ? (
+            <Button disabled={applying || installingLocal} onClick={onInstallLocal} size="sm" variant="ghost">
+              {installingLocal ? <Loader2 className="size-4 animate-spin" /> : null}
+              {copy.installLocalTitle}
+            </Button>
+          ) : hideBack ? (
             <span />
           ) : (
             <Button disabled={applying} onClick={onBack} size="sm" variant="ghost">

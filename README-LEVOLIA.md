@@ -15,18 +15,18 @@ faciliter les fusions.
 - `apps/desktop/electron/main.ts` : schéma de lien profond aligné (`levolia`, `levolia-dev`) ;
   auto-mise à jour désactivée (`LEVOLIA_SELF_UPDATE_DISABLED`) et entrée de menu
   « Check for Updates » retirée. Les nouvelles versions passent par les installeurs Levolia.
-  Mode strictement distant (`LEVOLIA_REMOTE_ONLY`) : l'app ne cherche jamais de
-  runtime Hermes local, même s'il en existe un sur la machine. Pour le développement,
-  `HERMES_DESKTOP_ALLOW_LOCAL=1` ou `HERMES_DESKTOP_HERMES_ROOT=<checkout>` rétablissent le mode local.
+  Le mode local reste disponible (nécessaire pour le computer use sur le poste) :
+  au premier lancement, le formulaire distant est proposé en premier et un bouton
+  « Installer Levolia en local » lance l'installation sur la machine.
 - `apps/desktop/assets/icon.{png,icns,ico}`, `public/apple-touch-icon.png`,
   `public/levolia-mark.png`, `public/levolia-logo.png` : icônes générées depuis le logo Levolia.
 - `apps/desktop/src/components/brand-mark.tsx` : logo Levolia dans l'interface.
 - `apps/desktop/src/components/desktop-install-overlay.tsx` : le premier lancement
-  affiche directement le formulaire de connexion distante. L'option
-  « installer en local » n'est plus proposée.
+  affiche directement le formulaire de connexion distante, avec l'installation
+  locale en action secondaire.
 - `apps/desktop/src/components/first-run-remote-form.tsx` : bouton Retour masquable.
 - `apps/desktop/src/app/settings/gateway-settings.tsx` et `connections-registry.tsx` :
-  seuls les modes « serveur distant » et « SSH » sont proposés. Local et Nous Cloud sont masqués.
+  modes « local », « serveur distant » et « SSH ». Nous Cloud est masqué.
 - `apps/desktop/src/i18n/fr.ts` : locale française (partielle : accueil, connexion,
   démarrage, actions communes ; le reste retombe sur l'anglais). Sélectionnée
   automatiquement sur un système en français.
@@ -122,10 +122,10 @@ cd apps/desktop && npm run typecheck && npm run test:ui
 
 Points de vigilance à chaque synchronisation :
 
-- Vérifier que les gardes Levolia dans `apps/desktop/electron/main.ts`
-  (`LEVOLIA_REMOTE_ONLY`, `LEVOLIA_SELF_UPDATE_DISABLED`) sont toujours en place.
+- Vérifier que la garde `LEVOLIA_SELF_UPDATE_DISABLED` dans `apps/desktop/electron/main.ts`
+  est toujours en place.
 - Relancer l'app construite sur un profil vierge : elle doit s'arrêter sur le
-  formulaire de connexion sans lancer de processus local.
+  formulaire de connexion distante, avec le bouton d'installation locale.
 - Mettre à jour l'agent sur les VPS clients avec la même version amont, car
   l'app contrôle l'écart de version avec le serveur.
 - Compléter `apps/desktop/src/i18n/fr.ts` si de nouveaux écrans sont apparus.

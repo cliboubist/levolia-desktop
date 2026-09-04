@@ -104,14 +104,15 @@ describe('ConnectionsRegistrySection', () => {
     })
   })
 
-  it('offers only remote and SSH kinds on create', async () => {
+  it('offers local, remote and SSH kinds on create and disables Local while the managed entry exists', async () => {
     render(<ConnectionsRegistrySection />)
 
     await waitFor(() => expect(screen.getByText('Homelab')).toBeTruthy())
     fireEvent.click(screen.getByText('Add connection'))
 
-    // Levolia: only hosted kinds (remote, SSH) can be created by clients.
-    expect(screen.queryByRole('button', { name: 'Local' })).toBeNull()
+    const localKind = screen.getByRole('button', { name: 'Local' }) as HTMLButtonElement
+    expect(localKind.disabled).toBe(true)
+    // Levolia: Nous Cloud is not offered.
     expect(screen.queryByRole('button', { name: 'Nous Cloud' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Remote gateway' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'SSH' })).toBeTruthy()

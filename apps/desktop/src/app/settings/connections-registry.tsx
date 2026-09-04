@@ -759,8 +759,8 @@ export function ConnectionsRegistrySection() {
             {/* Kind is fixed once created (buttons disable on edit). On create
                 every kind is offered; Local is disabled while the managed
                 local entry exists (the registry holds at most one). */}
-            {/* Levolia: clients only connect to a hosted server (remote or SSH). */}
-            {(editor.id ? ([editor.kind] as const) : (['remote', 'ssh'] as const)).map(kind => (
+            {/* Levolia: Nous Cloud is not offered. */}
+            {(editor.id ? ([editor.kind] as const) : (['local', 'remote', 'ssh'] as const)).map(kind => (
               <Button
                 disabled={Boolean(editor.id) || (kind === 'local' && hasLocal)}
                 key={kind}

@@ -90,7 +90,7 @@ afterEach(() => {
 })
 
 describe('DesktopInstallOverlay first-run setup', () => {
-  it('shows the remote connection form directly, with no local install option', async () => {
+  it('shows the remote connection form directly, with local install as a secondary action', async () => {
     installDesktopMock(
       bootstrapState({
         setupChoice: { platform: 'win32', activeRoot: 'C:\\Users\\me\\AppData\\Local\\hermes\\hermes-agent' }
@@ -103,7 +103,7 @@ describe('DesktopInstallOverlay first-run setup', () => {
     expect(screen.getByText('Test connection')).toBeTruthy()
     expect(screen.getByText('Apply and reconnect')).toBeTruthy()
     expect(screen.queryByText('Back')).toBeNull()
-    expect(screen.queryByText(/Install .* locally/i)).toBeNull()
+    expect(screen.getByText('Install Levolia locally')).toBeTruthy()
     expect(screen.queryByText(/steps complete/i)).toBeNull()
     expect(screen.queryByText(/Fetching installer manifest/i)).toBeNull()
   })

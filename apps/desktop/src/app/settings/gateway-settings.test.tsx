@@ -40,9 +40,9 @@ describe('GatewaySettings', () => {
     const { GatewaySettings } = await import('./gateway-settings')
 
     render(<GatewaySettings />)
-    expect(await screen.findByText('Remote gateway')).toBeTruthy()
-    // Levolia: local and Nous Cloud modes are not offered to clients.
-    expect(screen.queryByText('Local gateway')).toBeNull()
+    expect(await screen.findByText('Local gateway')).toBeTruthy()
+    expect(screen.getByText('Remote gateway')).toBeTruthy()
+    // Levolia: Nous Cloud is not offered.
     expect(screen.queryByText('Nous Cloud')).toBeNull()
 
     // The page manages the machine's gateway connections; it must load the

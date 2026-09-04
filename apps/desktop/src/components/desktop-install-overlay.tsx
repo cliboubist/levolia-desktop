@@ -15,7 +15,7 @@ import type {
   DesktopBootstrapState
 } from '@/global'
 import { useI18n } from '@/i18n'
-import { ChevronDown, ChevronRight, Globe, iconSize } from '@/lib/icons'
+import { AlertCircle, ChevronDown, ChevronRight, Globe, iconSize } from '@/lib/icons'
 import { capitalize } from '@/lib/text'
 import { cn } from '@/lib/utils'
 
@@ -277,6 +277,17 @@ export function DesktopInstallOverlay({ enabled = true }: DesktopInstallOverlayP
   const [copied, setCopied] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [remoteOpen, setRemoteOpen] = useState(false)
+
+  const [localStart, setLocalStart] = useState<{ error: string | null; root: string | null; starting: boolean }>({
+    error: null,
+    root: null,
+    starting: false
+  })
+
+  const activeRoot = state.setupChoice?.activeRoot ?? null
+  const forActiveRoot = localStart.root === activeRoot
+  const localStarting = forActiveRoot && localStart.starting
+  const localStartError = forActiveRoot ? localStart.error : null
   const [now, setNow] = useState(() => Date.now())
   const logEndRef = useRef<HTMLDivElement | null>(null)
 
@@ -387,8 +398,40 @@ export function DesktopInstallOverlay({ enabled = true }: DesktopInstallOverlayP
   }
 
   if (state.setupChoice) {
-    // Levolia: remote-only. The local-install path is intentionally not offered.
-    return <FirstRunRemoteForm hideBack onBack={() => setRemoteOpen(false)} />
+    // Levolia: the remote server is the primary path; a local install stays
+    // available as a secondary action (needed for computer use on this machine).
+    return (
+      <>
+        <FirstRunRemoteForm
+          hideBack
+          installingLocal={localStarting}
+          onBack={() => setRemoteOpen(false)}
+          onInstallLocal={async () => {
+            setLocalStart({ root: activeRoot, starting: true, error: null })
+
+            try {
+              const desktop = window.hermesDesktop
+
+              if (!desktop || typeof desktop.continueBootstrapLocal !== 'function') {
+                throw new Error(copy.localStartUnavailable)
+              }
+
+              await desktop.continueBootstrapLocal()
+            } catch (err) {
+              setLocalStart({ root: activeRoot, starting: false, error: errorMessage(err) })
+            }
+          }}
+        />
+        {localStartError ? (
+          <div className="fixed inset-x-0 bottom-6 z-(--z-setup) flex justify-center px-4">
+            <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-card px-4 py-3 text-sm text-destructive shadow-nous">
+              <AlertCircle className="mt-0.5 size-4 shrink-0" />
+              <span>{localStartError}</span>
+            </div>
+          </div>
+        ) : null}
+      </>
+    )
   }
 
   // Unsupported-platform branch: macOS/Linux packaged builds hit this when
