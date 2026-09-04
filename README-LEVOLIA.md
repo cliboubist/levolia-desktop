@@ -33,6 +33,15 @@ faciliter les fusions.
 - `apps/desktop/src/i18n/{en,ar,ja,zh,zh-hant,ru}.ts` : « Hermes » remplacé par
   « Levolia » dans les textes visibles. Les mentions « Nous Cloud » sont conservées.
 - `apps/desktop/index.html` : titre de fenêtre.
+- **Installation locale brandée Levolia** : `apps/desktop/electron/bootstrap-runner.ts`
+  télécharge le script d'installation depuis le fork GitHub (`cliboubist/levolia-desktop`,
+  branche `levolia`) ; `scripts/install.sh` et `scripts/install.ps1` clonent ce fork,
+  installent dans `~/.levolia/levolia-agent` (macOS, Linux) ou
+  `%LOCALAPPDATA%\levolia\levolia-agent` (Windows), et affichent des étapes « Levolia ».
+  Le nom de la commande `hermes` et des modules Python reste inchangé : ce sont des
+  noms internes, invisibles pour le client. **Prérequis : la branche `levolia` doit
+  être poussée sur GitHub avant de construire un installeur**, car le build fige le
+  commit exact que l'installateur ira chercher.
 
 ## Construire l'app
 
