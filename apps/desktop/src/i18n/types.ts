@@ -2378,6 +2378,19 @@ export interface Translations {
     }
   }
 
+  levoliaGoogle: {
+    title: string
+    body: string
+    connect: string
+    later: string
+    connecting: string
+    connectedTitle: string
+    connectedBody: string
+    failedTitle: string
+    cancelled: string
+    optional: string
+  }
+
   install: {
     stageStates: Record<string, string>
     oneTimeTitle: string

@@ -2957,6 +2957,19 @@ export const zh: Translations = {
     }
   },
 
+  levoliaGoogle: {
+    title: '连接您的 Google 账户',
+    body: '让您的 Levolia 助手读取和发送邮件、管理日历并处理 Drive 文件。可选步骤，稍后可在设置中完成。',
+    connect: '连接 Google',
+    later: '稍后',
+    connecting: '等待 Google…',
+    connectedTitle: 'Google 已连接',
+    connectedBody: '您的助手现在可以使用 Gmail、日历和 Drive。',
+    failedTitle: 'Google 连接失败',
+    cancelled: 'Google 窗口在授权完成前已关闭。',
+    optional: '可选步骤'
+  },
+
   install: {
     stageStates: {
       pending: '等待中',

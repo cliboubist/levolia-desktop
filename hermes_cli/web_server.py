@@ -610,6 +610,11 @@ from hermes_cli.levolia_relay import router as _levolia_relay_router  # noqa: E4
 
 app.include_router(_levolia_relay_router)
 
+# Levolia: optional Google Workspace connection driven from the desktop.
+from hermes_cli.levolia_google import router as _levolia_google_router  # noqa: E402
+
+app.include_router(_levolia_google_router)
+
 # ---------------------------------------------------------------------------
 # Session token for protecting sensitive endpoints (reveal).
 # The desktop shell mints the token and injects it via

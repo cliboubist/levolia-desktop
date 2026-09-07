@@ -309,6 +309,8 @@ declare global {
       setDisableF12?: (blocked: boolean) => void
       setPreviewShortcutActive?: (active: boolean) => void
       openExternal: (url: string) => Promise<void>
+      /** Levolia: open Google's consent page and capture the OAuth code. */
+      levoliaGoogleConsent?: (url: string) => Promise<{ code?: string; error?: string }>
       /** One-shot loopback callback listener for MCP OAuth against remote
        *  backends (electron/mcp-oauth-callback-ipc.ts): bind on THIS machine,
        *  pass redirectUri as client_redirect_uri to mcp.servers.oauth.start,

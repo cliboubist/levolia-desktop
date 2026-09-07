@@ -241,6 +241,19 @@ export const fr = defineLocale({
     noResults: 'Aucune langue trouvée'
   },
 
+  levoliaGoogle: {
+    title: 'Connecter votre compte Google',
+    body: 'Permettez à votre agent Levolia de lire et envoyer des e-mails, gérer votre agenda et travailler avec vos fichiers Drive. Facultatif : vous pourrez le faire plus tard depuis les réglages.',
+    connect: 'Connecter Google',
+    later: 'Plus tard',
+    connecting: 'En attente de Google…',
+    connectedTitle: 'Google connecté',
+    connectedBody: 'Votre agent peut maintenant utiliser Gmail, Agenda et Drive.',
+    failedTitle: 'La connexion Google a échoué',
+    cancelled: 'La fenêtre Google a été fermée avant la fin de l’autorisation.',
+    optional: 'Étape facultative'
+  },
+
   install: {
     stageStates: {
       pending: 'En attente',

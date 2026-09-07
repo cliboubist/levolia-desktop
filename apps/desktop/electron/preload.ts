@@ -275,6 +275,8 @@ contextBridge.exposeInMainWorld('hermesDesktop', {
   setDisableF12: blocked => ipcRenderer.send('hermes:devtools:disable-f12', blocked),
   setPreviewShortcutActive: active => ipcRenderer.send('hermes:previewShortcutActive', Boolean(active)),
   openExternal: url => ipcRenderer.invoke('hermes:openExternal', url),
+  // Levolia: Google consent window; resolves { code } | { error }.
+  levoliaGoogleConsent: url => ipcRenderer.invoke('hermes:levolia:google-consent', url),
   mcpOauth: {
     // One-shot loopback listener for MCP OAuth against remote backends: bind
     // on this machine, hand redirectUri to mcp.servers.oauth.start, then wait

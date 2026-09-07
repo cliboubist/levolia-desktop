@@ -2795,6 +2795,19 @@ export const en: Translations = {
     }
   },
 
+  levoliaGoogle: {
+    title: 'Connect your Google account',
+    body: 'Let your Levolia agent read and send email, manage your calendar and work with your Drive files. Optional — you can do this later from the settings.',
+    connect: 'Connect Google',
+    later: 'Later',
+    connecting: 'Waiting for Google…',
+    connectedTitle: 'Google connected',
+    connectedBody: 'Your agent can now use Gmail, Calendar and Drive.',
+    failedTitle: 'Google connection failed',
+    cancelled: 'The Google window was closed before authorization finished.',
+    optional: 'Optional step'
+  },
+
   install: {
     stageStates: {
       pending: 'Pending',

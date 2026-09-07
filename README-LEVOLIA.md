@@ -120,6 +120,25 @@ qui transmet les requêtes au fournisseur configuré avec l'identifiant du serve
   Changer de fournisseur sur le serveur suffit : l'app se réaligne au démarrage suivant.
 - `GET /api/llm/info` renvoie le modèle et le mode d'API à refléter, sans secret.
 
+### Google Workspace : étape facultative de l'onboarding
+
+Un projet Google Cloud par client (choix retenu : pas de vérification Google requise
+pour un usage interne à l'organisation du client). À faire par Levolia lors de la mise
+en place du client, une quinzaine de minutes :
+
+1. Dans la console Google Cloud du client, créer un projet, activer les API Gmail,
+   Calendar, Drive, People, Sheets et Docs.
+2. Écran de consentement OAuth : type « Interne » si le client a Google Workspace,
+   sinon « Externe » en mode test avec l'adresse du client comme testeur.
+3. Créer un identifiant OAuth de type **Application de bureau** et télécharger le JSON.
+4. Le déposer sur le VPS sous `$HERMES_HOME/google_client_secret.json` (mode `0600`).
+
+Dès lors, l'app affiche au client, une fois connecté, une carte « Connecter votre
+compte Google » avec un bouton « Plus tard ». Le clic ouvre la page de consentement
+Google dans une fenêtre de l'app ; le code d'autorisation est capturé et échangé sur
+le serveur (`hermes_cli/levolia_google.py`, routes `/api/levolia/google/*`). Rien
+n'est bloquant : sans fichier d'identifiants, la carte n'apparaît pas.
+
 L'app conserve la connexion dans son dossier de données utilisateur
 (`connections.json`). Les variables `HERMES_DESKTOP_REMOTE_URL` et
 `HERMES_DESKTOP_REMOTE_TOKEN` restent utilisables comme solution de secours.

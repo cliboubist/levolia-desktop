@@ -15694,6 +15694,85 @@ async function fetchJsonForBackend(
 }
 
 ipcMain.handle('hermes:connection-config:probe', async (_event, rawUrl) => probeRemoteAuthMode(rawUrl))
+
+// ── Levolia: Google consent window ──────────────────────────────────────────
+// Opens Google's OAuth consent page in a child window and captures the
+// authorization code when Google redirects to the skill's loopback redirect
+// URI (http://localhost:1/?code=…, which nothing serves — we intercept the
+// navigation instead). Resolves { code } or { error }; closing the window
+// resolves { error: 'closed' }. The code is then exchanged server-side.
+const LEVOLIA_GOOGLE_REDIRECT_PREFIX = 'http://localhost:1'
+
+ipcMain.handle('hermes:levolia:google-consent', async (_event, rawUrl) => {
+  const url = String(rawUrl || '')
+
+  if (!/^https:\/\/accounts\.google\.com\//i.test(url)) {
+    return { error: 'unexpected-url' }
+  }
+
+  return new Promise(resolve => {
+    let settled = false
+
+    const win = new BrowserWindow({
+      width: 520,
+      height: 720,
+      parent: mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined,
+      modal: false,
+      title: 'Google',
+      autoHideMenuBar: true,
+      webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true }
+    })
+
+    const settle = result => {
+      if (settled) {
+        return
+      }
+
+      settled = true
+      resolve(result)
+
+      if (!win.isDestroyed()) {
+        win.close()
+      }
+    }
+
+    const inspect = target => {
+      if (!target.startsWith(LEVOLIA_GOOGLE_REDIRECT_PREFIX)) {
+        return false
+      }
+
+      try {
+        const parsed = new URL(target)
+        const code = parsed.searchParams.get('code')
+        const error = parsed.searchParams.get('error')
+
+        settle(code ? { code } : { error: error || 'no-code' })
+      } catch {
+        settle({ error: 'bad-redirect' })
+      }
+
+      return true
+    }
+
+    win.webContents.on('will-redirect', (event, target) => {
+      if (inspect(target)) {
+        event.preventDefault()
+      }
+    })
+    win.webContents.on('will-navigate', (event, target) => {
+      if (inspect(target)) {
+        event.preventDefault()
+      }
+    })
+    win.webContents.on('did-fail-load', (_e, _code, _desc, validatedUrl) => {
+      inspect(validatedUrl || '')
+    })
+    win.on('closed', () => settle({ error: 'closed' }))
+    win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+    void win.loadURL(url)
+  })
+})
+
 ipcMain.handle('hermes:connection-config:oauth-login', async (_event, rawUrl) => {
   // Capability-gated login (RFC 8252). Probe the gateway's public /api/status
   // for supported auth_flows and /api/auth/providers for provider capabilities:
