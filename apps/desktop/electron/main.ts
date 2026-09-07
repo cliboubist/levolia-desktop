@@ -5203,7 +5203,7 @@ function fetchJson(url, token, options: any = {}) {
               ...headersForRemoteRequest(url),
               ...(options.headers || {}),
               'Content-Type': contentType,
-              'X-Levolia-Session-Token': token,
+              'X-Hermes-Session-Token': token,
               // RFC 8252 native flow authenticates the gated gateway with a bearer
               // token instead of the loopback session-token header. When
               // ``options.bearer`` is set we send Authorization: Bearer <token>;
@@ -5311,7 +5311,7 @@ function downloadViaTokenToFile(url, token, ctx, options: any = {}) {
       {
         agent,
         method: 'GET',
-        headers: options.bearer ? { Authorization: `Bearer ${options.bearer}` } : { 'X-Levolia-Session-Token': token }
+        headers: options.bearer ? { Authorization: `Bearer ${options.bearer}` } : { 'X-Hermes-Session-Token': token }
       },
       res => {
         // Headers arrived — the connection phase is done. Drop the idle timeout
@@ -12867,6 +12867,10 @@ async function startHermes() {
     // accumulated count of the resolved episode.
     bootstrapRepairAttempt = 0
 
+    // Levolia: the model is chosen on the hosted server. Point the local agent
+    // at the server's relay so the client never configures a provider or key.
+    await syncLocalModelFromLevoliaServer({ baseUrl, authMode: 'token', token: authToken })
+
     return {
       baseUrl,
       mode: 'local',
@@ -15539,6 +15543,100 @@ ipcMain.handle('hermes:connections:update-all', async (_event, payload) => {
 // Convenience wrappers around the bearer-aware descriptor request path.
 // Native OAuth sessions are cookieless, so these must not bypass
 // fetchJsonForBackend and fall straight through to the cookie partition.
+// ── Levolia: mirror the server's model into the local agent ────────────────
+// The hosted Levolia server exposes /api/llm/* (see hermes_cli/levolia_relay.py):
+// an authenticated relay to whatever model provider is configured there. When
+// this computer also has a saved Levolia server connection, the local agent is
+// pointed at that relay (provider=custom) with the server's model/api_mode, so
+// the client never sees a provider or API-key screen and switching the model on
+// the server switches it here too. Best effort: any failure leaves the local
+// configuration untouched and is only logged.
+const LEVOLIA_RELAY_PATH = '/api/llm'
+const LEVOLIA_MODEL_SYNC_TIMEOUT_MS = 8000
+
+function findLevoliaServerConnection() {
+  try {
+    const registry = readDesktopConnectionsRegistry()
+
+    const remote = (registry?.connections || []).find(
+      c => c && c.kind === 'remote' && typeof c.url === 'string' && c.url && c.authMode !== 'oauth'
+    )
+
+    if (!remote) {
+      return null
+    }
+
+    const token = remote.token ? decryptDesktopSecret(remote.token) : ''
+
+    if (!token) {
+      return null
+    }
+
+    return { token, url: String(remote.url).replace(/\/+$/, '') }
+  } catch (err) {
+    rememberLog(`[levolia-model] registry read failed: ${err?.message || err}`)
+
+    return null
+  }
+}
+
+async function syncLocalModelFromLevoliaServer(localDescriptor) {
+  const server = findLevoliaServerConnection()
+
+  if (!server) {
+    return
+  }
+
+  try {
+    const info = await fetchJson(`${server.url}${LEVOLIA_RELAY_PATH}/info`, null, {
+      bearer: server.token,
+      timeoutMs: LEVOLIA_MODEL_SYNC_TIMEOUT_MS
+    })
+
+    const model = String(info?.model || '').trim()
+    const apiMode = String(info?.api_mode || '').trim()
+
+    if (!model) {
+      rememberLog('[levolia-model] server relay reported no model; leaving local config untouched')
+
+      return
+    }
+
+    const relayUrl = `${server.url}${LEVOLIA_RELAY_PATH}`
+
+    const current = await getJsonForBackend(localDescriptor, '/api/model/info', {
+      timeoutMs: LEVOLIA_MODEL_SYNC_TIMEOUT_MS
+    }).catch(() => null)
+
+    if (
+      current &&
+      String(current.provider || '') === 'custom' &&
+      String(current.base_url || '').replace(/\/+$/, '') === relayUrl &&
+      String(current.model || current.name || '') === model
+    ) {
+      return
+    }
+
+    await postJsonForBackend(
+      localDescriptor,
+      '/api/model/set',
+      {
+        scope: 'main',
+        provider: 'custom',
+        model,
+        base_url: relayUrl,
+        api_key: server.token,
+        api_mode: apiMode,
+        confirm_expensive_model: true
+      },
+      { timeoutMs: LEVOLIA_MODEL_SYNC_TIMEOUT_MS }
+    )
+    rememberLog(`[levolia-model] local agent now uses ${model} via ${new URL(relayUrl).host}`)
+  } catch (err) {
+    rememberLog(`[levolia-model] sync skipped: ${err?.message || err}`)
+  }
+}
+
 async function postJsonForBackend(descriptor, path, body, opts: any = {}) {
   return fetchJsonForBackend(descriptor, path, { ...opts, body: body ?? {}, method: 'POST' })
 }

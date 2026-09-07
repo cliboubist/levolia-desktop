@@ -105,6 +105,21 @@ npm run test:ui
    `https://` sont acceptées. À défaut, le client peut saisir l'adresse et le
    jeton à la main dans le formulaire du premier lancement.
 
+### Modèle IA : choisi sur le serveur, hérité par le poste
+
+Le fournisseur et le modèle sont configurés une fois sur le VPS (`hermes auth add …`,
+`hermes config set model.provider …`, `model.default …`). Le serveur du fork expose un
+relais authentifié `https://<client>.levolia.ai/api/llm/*` (`hermes_cli/levolia_relay.py`)
+qui transmet les requêtes au fournisseur configuré avec l'identifiant du serveur.
+
+- Jeton du relais : `LEVOLIA_RELAY_TOKEN` dans le `.env` du serveur (à défaut, le jeton
+  `HERMES_DASHBOARD_SESSION_TOKEN` est utilisé). Sans jeton, le relais répond 503.
+- Quand le client installe aussi l'agent en local, l'app configure automatiquement cet
+  agent pour utiliser le relais du serveur (fournisseur `custom`, même modèle, même
+  mode d'API). Aucune clé ne descend sur le poste, aucun écran de choix de modèle.
+  Changer de fournisseur sur le serveur suffit : l'app se réaligne au démarrage suivant.
+- `GET /api/llm/info` renvoie le modèle et le mode d'API à refléter, sans secret.
+
 L'app conserve la connexion dans son dossier de données utilisateur
 (`connections.json`). Les variables `HERMES_DESKTOP_REMOTE_URL` et
 `HERMES_DESKTOP_REMOTE_TOKEN` restent utilisables comme solution de secours.

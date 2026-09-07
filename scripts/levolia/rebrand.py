@@ -98,6 +98,8 @@ def rebrand_main_process() -> None:
         out.append(LITERAL_RE.sub(lambda m: re.sub(r"\bHermes\b(?![A-Za-z_])", "Levolia", m.group(0)), line))
     s = "\n".join(out)
     s = s.replace("process.env.HERMES_DESKTOP_APP_NAME || 'Hermes'", "process.env.HERMES_DESKTOP_APP_NAME || 'Levolia'")
+    # Wire-protocol identifiers must keep their upstream spelling.
+    s = s.replace("X-Levolia-Session-Token", "X-Hermes-Session-Token").replace("X-Levolia-", "X-Hermes-")
     p.write_text(s)
     print(f"rebranded {p.relative_to(ROOT)}")
 

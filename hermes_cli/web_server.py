@@ -7881,7 +7881,8 @@ async def set_model_assignment(body: ModelAssignment, profile: Optional[str] = N
         def _apply_assignment():
             with _profile_scope(body.profile or profile):
                 return _apply_model_assignment_sync(
-                    scope, provider, model, task, base_url, api_key
+                    scope, provider, model, task, base_url, api_key,
+                    api_mode=(body.api_mode or "").strip(),
                 )
 
         return await asyncio.to_thread(_apply_assignment)
@@ -7893,7 +7894,8 @@ async def set_model_assignment(body: ModelAssignment, profile: Optional[str] = N
 
 
 def _apply_model_assignment_sync(
-    scope: str, provider: str, model: str, task: str, base_url: str, api_key: str = ""
+    scope: str, provider: str, model: str, task: str, base_url: str, api_key: str = "",
+    api_mode: str = "",
 ):
     """Synchronous body of POST /api/model/set.
 
@@ -7947,6 +7949,15 @@ def _apply_model_assignment_sync(
                 model_cfg["api_key"] = _raw_key
             else:
                 model_cfg["api_key"] = provider_entry["api_key"]
+        if api_mode:
+            _canonical_api_mode = {
+                "chat_completions": "chat_completions",
+                "codex_responses": "codex_responses",
+                "anthropic_messages": "anthropic_messages",
+            }.get(api_mode.strip().lower())
+            if not _canonical_api_mode:
+                raise HTTPException(status_code=400, detail=f"unsupported api_mode: {api_mode}")
+            model_cfg["api_mode"] = _canonical_api_mode
         cfg["model"] = model_cfg
 
         # When switching the main provider to Nous, mirror the CLI's

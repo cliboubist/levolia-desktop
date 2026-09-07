@@ -138,6 +138,10 @@ class ModelAssignment(BaseModel):
     # from config (they ignore OPENAI_BASE_URL), so this is the path that
     # actually wires a local endpoint into resolution.
     base_url: str = ""
+    # Optional wire protocol for custom endpoints (chat_completions,
+    # codex_responses, anthropic_messages). Levolia: lets a client agent mirror
+    # the api_mode of the server it relays through. Empty = auto-detect.
+    api_mode: str = ""
     # Optional API key for a custom/local endpoint. Persisted to
     # ``model.api_key`` (main slot) or ``auxiliary.<task>.api_key`` (aux
     # slots) — where the runtime resolvers read it — so a self-hosted
