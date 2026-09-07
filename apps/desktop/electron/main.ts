@@ -17537,6 +17537,7 @@ async function handlePairingDeepLink(params) {
   const rawUrl = String(params?.url || '').trim()
   const token = String(params?.token || '').trim()
 
+  rememberLog(`[pairing] link received for ${rawUrl || '(no url)'}`)
   await app.whenReady()
 
   if (_pairingInFlight) {
@@ -17643,9 +17644,12 @@ function handleDeepLink(url) {
     params[k] = v
   })
   const payload = { kind, name, params }
+  rememberLog(`[deeplink] received ${kind}/${name}`)
 
   if (kind === 'connect') {
-    void handlePairingDeepLink(params)
+    handlePairingDeepLink(params).catch(err => {
+      rememberLog(`[pairing] unexpected error: ${err?.stack || err}`)
+    })
 
     return
   }
