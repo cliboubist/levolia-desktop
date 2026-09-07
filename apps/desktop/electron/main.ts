@@ -15710,7 +15710,8 @@ ipcMain.handle('hermes:connection-config:save', async (_event, payload) => {
 
   return sanitizeDesktopConnectionConfig(config, payload?.profile)
 })
-ipcMain.handle('hermes:connection-config:apply', async (_event, payload) => {
+
+async function applyDesktopConnectionConfigFromInput(payload) {
   assertCanMutateManagedPrimaryRouting()
   const previousConfig = readDesktopConnectionConfig()
   const previousRegistry = readDesktopConnectionsRegistry()
@@ -15756,7 +15757,11 @@ ipcMain.handle('hermes:connection-config:apply', async (_event, payload) => {
   })
 
   return sanitizeDesktopConnectionConfig(config, payload?.profile)
-})
+}
+
+ipcMain.handle('hermes:connection-config:apply', async (_event, payload) =>
+  applyDesktopConnectionConfigFromInput(payload)
+)
 
 ipcMain.handle('hermes:profile:get', async () => ({ profile: readActiveDesktopProfile() }))
 // Persistence-only sibling of hermes:profile:set: records the profile the
@@ -17520,6 +17525,93 @@ function _extractDeepLink(argv) {
   return argv.find(a => typeof a === 'string' && DEEPLINK_SCHEMES.some(s => a.startsWith(`${s}://`))) || null
 }
 
+// Levolia pairing link: levolia://connect?url=https://client.levolia.ai&token=…
+// Lets a client link this computer to their hosted agent with one click
+// instead of typing the address and token. Handled entirely in the main
+// process so it works during first run, before the renderer is ready. A
+// native confirmation guards against a hostile page pointing the app at a
+// rogue server; the connection is tested before anything is saved.
+let _pairingInFlight = false
+
+async function handlePairingDeepLink(params) {
+  const rawUrl = String(params?.url || '').trim()
+  const token = String(params?.token || '').trim()
+
+  await app.whenReady()
+
+  if (_pairingInFlight) {
+    return
+  }
+
+  let target
+
+  try {
+    target = new URL(/^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`)
+  } catch {
+    rememberLog('[pairing] rejected: malformed url')
+    dialog.showMessageBox({ type: 'error', message: 'Lien Levolia invalide', detail: 'L’adresse du serveur est absente ou mal formée.' })
+
+    return
+  }
+
+  const isLoopback = ['localhost', '127.0.0.1', '::1'].includes(target.hostname)
+
+  if (target.protocol !== 'https:' && !isLoopback) {
+    rememberLog(`[pairing] rejected: non-https url for ${target.host}`)
+    dialog.showMessageBox({
+      type: 'error',
+      message: 'Lien Levolia refusé',
+      detail: 'Seules les adresses https:// sont acceptées pour un serveur distant.'
+    })
+
+    return
+  }
+
+  if (!token) {
+    rememberLog('[pairing] rejected: missing token')
+    dialog.showMessageBox({ type: 'error', message: 'Lien Levolia incomplet', detail: 'Le jeton d’accès est absent du lien.' })
+
+    return
+  }
+
+  const choice = await dialog.showMessageBox({
+    type: 'question',
+    buttons: ['Connecter', 'Annuler'],
+    defaultId: 0,
+    cancelId: 1,
+    message: `Connecter Levolia à ${target.host} ?`,
+    detail: 'Cet ordinateur sera relié à ce serveur Levolia. N’acceptez que les liens reçus de Levolia.'
+  })
+
+  if (choice.response !== 0) {
+    rememberLog('[pairing] cancelled by user')
+
+    return
+  }
+
+  _pairingInFlight = true
+
+  try {
+    await applyDesktopConnectionConfigFromInput({
+      mode: 'remote',
+      remoteAuthMode: 'token',
+      remoteToken: token,
+      remoteUrl: target.toString().replace(/\/$/, ''),
+      allowPlainTextToken: true
+    })
+    rememberLog(`[pairing] connected to ${target.host}`)
+  } catch (err) {
+    rememberLog(`[pairing] failed: ${err?.message || err}`)
+    dialog.showMessageBox({
+      type: 'error',
+      message: 'Connexion au serveur Levolia impossible',
+      detail: String(err?.message || err)
+    })
+  } finally {
+    _pairingInFlight = false
+  }
+}
+
 function handleDeepLink(url) {
   if (!url || typeof url !== 'string') {
     return
@@ -17551,6 +17643,12 @@ function handleDeepLink(url) {
     params[k] = v
   })
   const payload = { kind, name, params }
+
+  if (kind === 'connect') {
+    void handlePairingDeepLink(params)
+
+    return
+  }
 
   if (!_rendererReadyForDeepLink || !mainWindow || mainWindow.isDestroyed()) {
     _pendingDeepLink = payload

@@ -92,8 +92,18 @@ npm run test:ui
    }
    ```
 
-5. Sur le poste du client, lancer Levolia Desktop, saisir l'adresse
-   `https://<client>.levolia.ai` et le jeton, tester, appliquer.
+5. Générer le lien d'appairage du client et lui envoyer par un canal privé
+   (il contient le jeton) :
+
+   ```bash
+   bash scripts/levolia/pairing-link.sh https://<client>.levolia.ai "$HERMES_DASHBOARD_SESSION_TOKEN"
+   ```
+
+   Le client installe Levolia Desktop, clique le lien `levolia://connect?...`,
+   confirme le nom du serveur dans la boîte de dialogue, et il est connecté.
+   La connexion est testée avant d'être enregistrée. Seules les adresses
+   `https://` sont acceptées. À défaut, le client peut saisir l'adresse et le
+   jeton à la main dans le formulaire du premier lancement.
 
 L'app conserve la connexion dans son dossier de données utilisateur
 (`connections.json`). Les variables `HERMES_DESKTOP_REMOTE_URL` et
