@@ -58,3 +58,14 @@ PUBLIC_API_PATHS: frozenset[str] = frozenset({
     # 401 no_cookie. The JWT — not this allowlist — is the security boundary.
     "/api/cron/fire",
 })
+
+# Levolia: prefixes that bypass the dashboard gates because the endpoint
+# carries its own token check (see ``hermes_cli.levolia_relay``).
+PUBLIC_API_PREFIXES: tuple[str, ...] = ("/api/llm/",)
+
+
+def is_public_api_path(path: str) -> bool:
+    """Exact allowlist match, or one of the self-authenticating prefixes."""
+    if path in PUBLIC_API_PATHS:
+        return True
+    return any(path.startswith(prefix) for prefix in PUBLIC_API_PREFIXES)

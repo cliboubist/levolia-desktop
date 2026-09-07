@@ -605,6 +605,11 @@ from hermes_cli.memory_oauth import router as _memory_oauth_router  # noqa: E402
 
 app.include_router(_memory_oauth_router)
 
+# Levolia model relay: lets client-side agents use the server's model provider.
+from hermes_cli.levolia_relay import router as _levolia_relay_router  # noqa: E402
+
+app.include_router(_levolia_relay_router)
+
 # ---------------------------------------------------------------------------
 # Session token for protecting sensitive endpoints (reveal).
 # The desktop shell mints the token and injects it via
@@ -726,6 +731,7 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 from hermes_cli.dashboard_auth.public_paths import (
     PUBLIC_API_PATHS as _PUBLIC_API_PATHS,
+    is_public_api_path as _is_public_api_path,
 )
 
 
@@ -1109,7 +1115,7 @@ async def auth_middleware(request: Request, call_next):
         return await call_next(request)
     path = request.url.path
     is_mcp_oauth_callback = path.startswith("/api/mcp/oauth/callback/")
-    if path.startswith("/api/") and path not in _PUBLIC_API_PATHS and not is_mcp_oauth_callback:
+    if path.startswith("/api/") and not _is_public_api_path(path) and not is_mcp_oauth_callback:
         if not _has_valid_session_token(request) and not _has_valid_query_token(request, path):
             return JSONResponse(
                 status_code=401,
