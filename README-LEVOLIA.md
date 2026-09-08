@@ -137,6 +137,9 @@ grep -A6 '^model:' ~/.levolia/config.yaml
 La configuration locale attendue contient `provider: custom` et
 `base_url: https://<client>.levolia.ai/api/llm`. Il ne faut jamais exécuter
 `hermes model` sur le poste client ni y copier une clé de fournisseur.
+La synchronisation est exécutée avant le contrôle WebSocket « inference ready » :
+sur un profil vierge, attendre ce contrôle avant de configurer le relais bloquerait
+le premier démarrage avec le message « No inference provider configured ».
 
 À chaque nouveau VPS, déployer la branche `levolia` (pas la distribution Hermes amont),
 ajouter `LEVOLIA_RELAY_TOKEN`, redémarrer le dashboard, puis effectuer ce contrôle avant
@@ -211,8 +214,11 @@ L'app conserve la connexion dans son dossier de données utilisateur
 
 ## Reste à faire
 
-- Signature et notarisation des binaires (certificats Apple Developer et Windows).
-  Le script `scripts/notarize.mjs` attend les identifiants Apple en variables d'environnement.
+- macOS : le certificat Developer ID est installé et la chaîne de signature fonctionne.
+  Le script `scripts/notarize.mjs` attend les identifiants App Store Connect en variables
+  d'environnement pour notariser chaque nouvel artefact. Une notarisation antérieure ne
+  couvre jamais un DMG reconstruit.
+- Windows : obtenir et configurer le certificat de signature dans GitHub Actions.
 - Compléter la traduction française au-delà des écrans d'accueil et de connexion.
 - Construire et tester un installeur réel sur macOS et Windows contre un VPS de démonstration.
 
