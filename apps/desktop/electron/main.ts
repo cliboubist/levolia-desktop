@@ -12382,6 +12382,11 @@ async function spawnPoolBackend(profile, entry, opts: { forceLocal?: boolean; po
 
   entry.token = authToken
 
+  // Configure inference before probing the WebSocket readiness contract.
+  // Fresh local profiles cannot announce inference-ready until the hosted
+  // model relay has been applied.
+  await syncLocalModelFromLevoliaServer({ baseUrl, authMode: 'token', token: authToken })
+
   // Verify the WebSocket session token before declaring backend ready.
   // HTTP /api/status can pass while WS auth fails (separate transport, separate guards).
   const wsUrl = `ws://127.0.0.1:${port}/api/ws?token=${encodeURIComponent(authToken)}`

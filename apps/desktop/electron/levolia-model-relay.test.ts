@@ -39,13 +39,19 @@ describe('findRelayServerConnection', () => {
   it('configures the local relay before waiting for inference-ready WebSocket state', () => {
     const source = readFileSync(new URL('./main.ts', import.meta.url), 'utf8')
     const localBoot = source.indexOf('Starting Levolia backend for profile')
-    const sync = source.indexOf('await syncLocalModelFromLevoliaServer', localBoot)
-    const bootStart = source.lastIndexOf('const authToken = await adoptServedDashboardToken', sync)
-    const probe = source.indexOf('const wsProbe = await probeGatewayWebSocket', sync)
+    const primaryBoot = source.indexOf("await advanceBootProgress('backend.port'")
+
+    for (const bootStart of [localBoot, primaryBoot]) {
+      const auth = source.indexOf('const authToken = await adoptServedDashboardToken', bootStart)
+      const sync = source.indexOf('await syncLocalModelFromLevoliaServer', auth)
+      const probe = source.indexOf('const wsProbe = await probeGatewayWebSocket', auth)
+
+      expect(auth).toBeGreaterThan(bootStart)
+      expect(sync).toBeGreaterThan(auth)
+      expect(probe).toBeGreaterThan(sync)
+    }
 
     expect(localBoot).toBeGreaterThan(-1)
-    expect(bootStart).toBeGreaterThan(-1)
-    expect(sync).toBeGreaterThan(bootStart)
-    expect(probe).toBeGreaterThan(sync)
+    expect(primaryBoot).toBeGreaterThan(-1)
   })
 })
