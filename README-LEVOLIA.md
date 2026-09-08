@@ -142,6 +142,50 @@ La configuration locale attendue contient `provider: custom` et
 ajouter `LEVOLIA_RELAY_TOKEN`, redémarrer le dashboard, puis effectuer ce contrôle avant
 d'envoyer l'installeur au client.
 
+#### Cas Hostinger : application Docker du catalogue
+
+L'image `ghcr.io/hostinger/hvps-hermes-agent:latest` ne contient pas les ajouts Levolia.
+Sur chaque VPS Hostinger, ouvrir **VPS → Mes applications → Hermes Agent → Terminal
+d'application**, exécuter `exit` pour revenir au shell du VPS, puis repérer le projet sous
+`/docker/hermes-agent-<suffixe>`. Le volume `./data:/opt/data` contient les données du
+client et doit être conservé.
+
+Procédure durable recommandée :
+
+```bash
+cd /docker/hermes-agent-<suffixe>
+git clone --depth 1 --branch levolia \
+  https://github.com/cliboubist/levolia-desktop.git levolia-src
+cd levolia-src
+REVISION=$(git rev-parse --short=12 HEAD)
+docker build -t "levolia/hermes-agent:${REVISION}" .
+
+cd ..
+cp docker-compose.yml "docker-compose.yml.before-levolia-${REVISION}"
+sed -i "s#image: .*#image: levolia/hermes-agent:${REVISION}#" docker-compose.yml
+grep -q '^LEVOLIA_RELAY_TOKEN=' .env || \
+  printf '\nLEVOLIA_RELAY_TOKEN=%s\n' "$(openssl rand -hex 32)" >> .env
+chmod 600 .env
+docker compose up -d --force-recreate
+```
+
+Le build complet est volontaire : il garde le serveur, la page de connexion et le relais
+sur exactement le même commit que l'application. Pour revenir en arrière, restaurer la
+sauvegarde `docker-compose.yml.before-levolia-*`, puis relancer `docker compose up -d
+--force-recreate`. Ne jamais supprimer le dossier `data/` pendant une mise à jour.
+
+Contrôles après redémarrage :
+
+```bash
+curl -fsS https://<client>.levolia.ai/api/status
+token=$(sed -n 's/^LEVOLIA_RELAY_TOKEN=//p' .env | tail -n1)
+curl -fsS -H "Authorization: Bearer ${token}" \
+  https://<client>.levolia.ai/api/llm/info
+```
+
+Le second appel doit renvoyer `provider`, `model`, `api_mode` et `upstream_host`, sans
+jamais renvoyer la clé du fournisseur.
+
 ### Google Workspace : étape facultative de l'onboarding
 
 Un projet Google Cloud par client (choix retenu : pas de vérification Google requise
