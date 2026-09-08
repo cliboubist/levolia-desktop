@@ -7,6 +7,22 @@ export interface GitBashOptions {
   findOnPath?: (command: string) => string | null
 }
 
+export interface GitBashBootstrapOptions {
+  isWindows: boolean
+  backendBootstrap: boolean
+  backendKind: string
+  gitBashPath: string | null
+}
+
+/**
+ * A managed Windows runtime without Git Bash is a repairable installation,
+ * not a terminal boot error. Sending it back through the bootstrap runner
+ * lets install.ps1 install its user-scoped PortableGit copy automatically.
+ */
+export function shouldBootstrapMissingGitBash(opts: GitBashBootstrapOptions): boolean {
+  return opts.isWindows && opts.backendBootstrap && opts.backendKind !== 'bootstrap-needed' && !opts.gitBashPath
+}
+
 /**
  * Locate bash.exe on Windows.
  * Resolution order (first match wins):

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 
 import { test } from 'vitest'
 
-import { findGitBash } from './find-git-bash'
+import { findGitBash, shouldBootstrapMissingGitBash } from './find-git-bash'
 
 const yes = () => true
 const no = () => false
@@ -51,4 +51,46 @@ test('non-Windows uses findOnPath', () => {
   })
 
   assert.equal(result, '/usr/bin/bash')
+})
+
+test('managed Windows runtime without Git Bash returns to bootstrap', () => {
+  assert.equal(
+    shouldBootstrapMissingGitBash({
+      isWindows: true,
+      backendBootstrap: true,
+      backendKind: 'python',
+      gitBashPath: null
+    }),
+    true
+  )
+})
+
+test('existing Git Bash and unmanaged runtimes do not trigger bootstrap', () => {
+  assert.equal(
+    shouldBootstrapMissingGitBash({
+      isWindows: true,
+      backendBootstrap: true,
+      backendKind: 'python',
+      gitBashPath: 'C:\\Program Files\\Git\\bin\\bash.exe'
+    }),
+    false
+  )
+  assert.equal(
+    shouldBootstrapMissingGitBash({
+      isWindows: true,
+      backendBootstrap: false,
+      backendKind: 'command',
+      gitBashPath: null
+    }),
+    false
+  )
+  assert.equal(
+    shouldBootstrapMissingGitBash({
+      isWindows: false,
+      backendBootstrap: true,
+      backendKind: 'python',
+      gitBashPath: null
+    }),
+    false
+  )
 })

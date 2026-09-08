@@ -178,7 +178,7 @@ import {
   tuiResumeArgs
 } from './external-terminal'
 import { type FaviconIo, resolveFavicon } from './favicon'
-import { findGitBash as _findGitBash } from './find-git-bash'
+import { findGitBash as _findGitBash, shouldBootstrapMissingGitBash } from './find-git-bash'
 import {
   installFindShortcut,
   installFoundInPageForwarder,
@@ -4982,6 +4982,32 @@ function resolveHermesBackend(backendArgs) {
 }
 
 async function ensureRuntime(backend) {
+  if (
+    shouldBootstrapMissingGitBash({
+      isWindows: IS_WINDOWS,
+      backendBootstrap: Boolean(backend.bootstrap),
+      backendKind: String(backend.kind || ''),
+      gitBashPath: IS_WINDOWS ? findGitBash() : null
+    })
+  ) {
+    rememberLog(
+      '[bootstrap] managed Windows runtime is missing Git Bash; rerunning setup to install PortableGit automatically'
+    )
+    backend = {
+      kind: 'bootstrap-needed',
+      label: 'Git Bash is missing; automatic PortableGit setup required',
+      command: null,
+      args: backend.args,
+      bootstrap: true,
+      env: {},
+      shell: false,
+      activeRoot: ACTIVE_HERMES_ROOT,
+      installStamp: INSTALL_STAMP,
+      isPackaged: IS_PACKAGED,
+      platform: process.platform
+    }
+  }
+
   if (!backend.bootstrap) {
     await advanceBootProgress('runtime.external', `Using ${backend.label}`, 32)
 
