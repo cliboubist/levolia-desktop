@@ -217,7 +217,9 @@ L'app conserve la connexion dans son dossier de données utilisateur
 - macOS : le certificat Developer ID est installé et la chaîne de signature fonctionne.
   Le script `scripts/notarize.mjs` attend les identifiants App Store Connect en variables
   d'environnement pour notariser chaque nouvel artefact. Une notarisation antérieure ne
-  couvre jamais un DMG reconstruit.
+  couvre jamais un DMG reconstruit. Après publication, valider le ticket avec
+  `xcrun stapler validate <fichier.dmg>` puis l'app montée avec
+  `spctl -a -vvv --type exec /Volumes/Levolia/Levolia.app`.
 - Windows : obtenir et configurer le certificat de signature dans GitHub Actions.
 - Compléter la traduction française au-delà des écrans d'accueil et de connexion.
 - Construire et tester un installeur réel sur macOS et Windows contre un VPS de démonstration.
