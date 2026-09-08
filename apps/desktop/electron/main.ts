@@ -268,6 +268,7 @@ import {
   tokenNeedsRefresh
 } from './native-oauth'
 import { runNativeLogin } from './native-oauth-login'
+import { findRelayServerConnection } from './levolia-model-relay'
 import { loadNativeTokenSet, type NativeTokenStoreIo, persistNativeTokenSet } from './native-token-store'
 import { serializeJsonBody, setJsonRequestHeaders } from './oauth-net-request'
 import { LEGACY_OAUTH_PARTITION, resolveOauthPartition } from './oauth-partition'
@@ -15557,22 +15558,7 @@ const LEVOLIA_MODEL_SYNC_TIMEOUT_MS = 8000
 function findLevoliaServerConnection() {
   try {
     const registry = readDesktopConnectionsRegistry()
-
-    const remote = (registry?.connections || []).find(
-      c => c && c.kind === 'remote' && typeof c.url === 'string' && c.url && c.authMode !== 'oauth'
-    )
-
-    if (!remote) {
-      return null
-    }
-
-    const token = remote.token ? decryptDesktopSecret(remote.token) : ''
-
-    if (!token) {
-      return null
-    }
-
-    return { token, url: String(remote.url).replace(/\/+$/, '') }
+    return findRelayServerConnection(registry?.connections || [], value => decryptDesktopSecret(value))
   } catch (err) {
     rememberLog(`[levolia-model] registry read failed: ${err?.message || err}`)
 
@@ -15588,16 +15574,24 @@ async function syncLocalModelFromLevoliaServer(localDescriptor) {
   }
 
   try {
-    const info = await fetchJson(`${server.url}${LEVOLIA_RELAY_PATH}/info`, null, {
-      bearer: server.token,
-      timeoutMs: LEVOLIA_MODEL_SYNC_TIMEOUT_MS
-    })
+    const info =
+      server.authMode === 'oauth'
+        ? await getJsonForBackend(
+            { baseUrl: server.url, authMode: 'oauth' },
+            `${LEVOLIA_RELAY_PATH}/bootstrap`,
+            { timeoutMs: LEVOLIA_MODEL_SYNC_TIMEOUT_MS }
+          )
+        : await fetchJson(`${server.url}${LEVOLIA_RELAY_PATH}/info`, null, {
+            bearer: server.token,
+            timeoutMs: LEVOLIA_MODEL_SYNC_TIMEOUT_MS
+          })
 
     const model = String(info?.model || '').trim()
     const apiMode = String(info?.api_mode || '').trim()
+    const relayToken = server.authMode === 'oauth' ? String(info?.relay_token || '').trim() : server.token
 
-    if (!model) {
-      rememberLog('[levolia-model] server relay reported no model; leaving local config untouched')
+    if (!model || !relayToken) {
+      rememberLog('[levolia-model] server relay reported incomplete configuration; leaving local config untouched')
 
       return
     }
@@ -15625,7 +15619,7 @@ async function syncLocalModelFromLevoliaServer(localDescriptor) {
         provider: 'custom',
         model,
         base_url: relayUrl,
-        api_key: server.token,
+        api_key: relayToken,
         api_mode: apiMode,
         confirm_expensive_model: true
       },

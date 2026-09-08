@@ -43,8 +43,30 @@ def _install_fake_upstream(monkeypatch, handler):
 def test_relay_prefix_is_exempt_from_dashboard_gates():
     assert is_public_api_path("/api/llm/chat/completions")
     assert is_public_api_path("/api/llm/info")
+    assert not is_public_api_path("/api/llm/bootstrap")
     assert not is_public_api_path("/api/llmx")
     assert not is_public_api_path("/api/sessions")
+
+
+def test_oauth_bootstrap_requires_session_and_returns_relay_config(app):
+    @app.middleware("http")
+    async def attach_test_session(request, call_next):
+        if request.headers.get("x-test-session") == "valid":
+            request.state.session = object()
+        return await call_next(request)
+
+    client = TestClient(app)
+    assert client.get("/api/llm/bootstrap").status_code == 401
+
+    res = client.get("/api/llm/bootstrap", headers={"x-test-session": "valid"})
+    assert res.status_code == 200
+    assert res.json() == {
+        "relay_token": TOKEN,
+        "provider": "openrouter",
+        "model": "server/model-x",
+        "api_mode": "chat_completions",
+        "upstream_host": "upstream.example",
+    }
 
 
 def test_missing_or_wrong_token_is_rejected(app):

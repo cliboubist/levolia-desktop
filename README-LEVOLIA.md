@@ -70,10 +70,11 @@ npm run test:ui
 
 1. Installer Hermes sur le VPS (script `setup-hermes.sh` ou Docker, voir le README amont).
 2. Configurer le fournisseur de modèle et les clés API dans la config Hermes du VPS.
-3. Définir le jeton d'accès et l'URL publique, par exemple dans le `.env` de Hermes :
+3. Définir les jetons et l'URL publique dans le `.env` de Hermes :
 
    ```bash
    HERMES_DASHBOARD_SESSION_TOKEN=<jeton long généré, ex: openssl rand -base64 32>
+   LEVOLIA_RELAY_TOKEN=<autre jeton long généré, ex: openssl rand -base64 32>
    ```
 
    et dans la config Hermes, `dashboard.public_url` = `https://<client>.levolia.ai`.
@@ -114,11 +115,32 @@ qui transmet les requêtes au fournisseur configuré avec l'identifiant du serve
 
 - Jeton du relais : `LEVOLIA_RELAY_TOKEN` dans le `.env` du serveur (à défaut, le jeton
   `HERMES_DASHBOARD_SESSION_TOKEN` est utilisé). Sans jeton, le relais répond 503.
+- Avec une connexion OAuth, l'app appelle une fois `GET /api/llm/bootstrap`, protégé par
+  la session du dashboard. Elle reçoit le jeton propre au relais, jamais la clé OpenAI,
+  Anthropic ou OpenRouter conservée sur le VPS.
 - Quand le client installe aussi l'agent en local, l'app configure automatiquement cet
   agent pour utiliser le relais du serveur (fournisseur `custom`, même modèle, même
   mode d'API). Aucune clé ne descend sur le poste, aucun écran de choix de modèle.
   Changer de fournisseur sur le serveur suffit : l'app se réaligne au démarrage suivant.
 - `GET /api/llm/info` renvoie le modèle et le mode d'API à refléter, sans secret.
+
+Pour vérifier chaque nouvelle installation :
+
+```bash
+# Sur le VPS : doit répondre 401 sans jeton, et non 404.
+curl -i https://<client>.levolia.ai/api/llm/info
+
+# Sur le Mac, après connexion au VPS puis installation de l'agent local :
+grep -A6 '^model:' ~/.levolia/config.yaml
+```
+
+La configuration locale attendue contient `provider: custom` et
+`base_url: https://<client>.levolia.ai/api/llm`. Il ne faut jamais exécuter
+`hermes model` sur le poste client ni y copier une clé de fournisseur.
+
+À chaque nouveau VPS, déployer la branche `levolia` (pas la distribution Hermes amont),
+ajouter `LEVOLIA_RELAY_TOKEN`, redémarrer le dashboard, puis effectuer ce contrôle avant
+d'envoyer l'installeur au client.
 
 ### Google Workspace : étape facultative de l'onboarding
 

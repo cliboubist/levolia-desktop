@@ -66,6 +66,10 @@ PUBLIC_API_PREFIXES: tuple[str, ...] = ("/api/llm/",)
 
 def is_public_api_path(path: str) -> bool:
     """Exact allowlist match, or one of the self-authenticating prefixes."""
+    # This endpoint hands an authenticated desktop its tenant relay token and
+    # therefore must pass through the normal OAuth/session gate.
+    if path == "/api/llm/bootstrap":
+        return False
     if path in PUBLIC_API_PATHS:
         return True
     return any(path.startswith(prefix) for prefix in PUBLIC_API_PREFIXES)

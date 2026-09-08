@@ -190,6 +190,40 @@ async def levolia_relay_info(request: Request):
     }
 
 
+@router.get("/api/llm/bootstrap")
+async def levolia_relay_bootstrap(request: Request):
+    """Give an authenticated desktop session the relay configuration.
+
+    Unlike the relay endpoints, this route is protected by the normal
+    dashboard OAuth gate. It returns the tenant-scoped relay token, never the
+    upstream provider credential, so the local agent remains usable after the
+    short-lived OAuth access token expires.
+    """
+    if getattr(request.state, "session", None) is None:
+        return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+
+    token = relay_token()
+    if not token:
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "Levolia relay disabled: set LEVOLIA_RELAY_TOKEN on the server."},
+        )
+
+    try:
+        runtime = _resolve_upstream()
+    except Exception as exc:
+        return JSONResponse(status_code=502, content={"detail": f"No usable model provider on the server: {exc}"})
+
+    model_cfg = _server_model_config()
+    return {
+        "relay_token": token,
+        "provider": runtime.get("provider") or model_cfg.get("provider") or "",
+        "model": model_cfg.get("default") or "",
+        "api_mode": runtime.get("api_mode") or model_cfg.get("api_mode") or "",
+        "upstream_host": urlsplit(str(runtime.get("base_url") or "")).netloc,
+    }
+
+
 @router.api_route("/api/llm/{upstream_path:path}", methods=["GET", "POST"])
 async def levolia_relay(upstream_path: str, request: Request):
     denied = _authorized(request)
