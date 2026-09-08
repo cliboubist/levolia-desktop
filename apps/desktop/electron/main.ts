@@ -12843,6 +12843,12 @@ async function startHermes() {
       rememberLog
     })
 
+    // Configure inference before probing the WebSocket readiness contract.
+    // A fresh local runtime cannot announce inference-ready until it has a
+    // provider, so doing this after the probe creates a startup deadlock on
+    // first install.
+    await syncLocalModelFromLevoliaServer({ baseUrl, authMode: 'token', token: authToken })
+
     // Verify the WebSocket session token before declaring backend ready.
     const wsUrl = `ws://127.0.0.1:${port}/api/ws?token=${encodeURIComponent(authToken)}`
     const wsProbe = await probeGatewayWebSocket(wsUrl, { WebSocketImpl: globalThis.WebSocket })
@@ -12867,10 +12873,6 @@ async function startHermes() {
     // failure starts fresh from attempt 1 instead of inheriting the
     // accumulated count of the resolved episode.
     bootstrapRepairAttempt = 0
-
-    // Levolia: the model is chosen on the hosted server. Point the local agent
-    // at the server's relay so the client never configures a provider or key.
-    await syncLocalModelFromLevoliaServer({ baseUrl, authMode: 'token', token: authToken })
 
     return {
       baseUrl,

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+
 import { describe, expect, it, vi } from 'vitest'
 
 import { findRelayServerConnection } from './levolia-model-relay'
@@ -32,5 +34,18 @@ describe('findRelayServerConnection', () => {
         () => ''
       )
     ).toBeNull()
+  })
+
+  it('configures the local relay before waiting for inference-ready WebSocket state', () => {
+    const source = readFileSync(new URL('./main.ts', import.meta.url), 'utf8')
+    const localBoot = source.indexOf('Starting Levolia backend for profile')
+    const sync = source.indexOf('await syncLocalModelFromLevoliaServer', localBoot)
+    const bootStart = source.lastIndexOf('const authToken = await adoptServedDashboardToken', sync)
+    const probe = source.indexOf('const wsProbe = await probeGatewayWebSocket', sync)
+
+    expect(localBoot).toBeGreaterThan(-1)
+    expect(bootStart).toBeGreaterThan(-1)
+    expect(sync).toBeGreaterThan(bootStart)
+    expect(probe).toBeGreaterThan(sync)
   })
 })
