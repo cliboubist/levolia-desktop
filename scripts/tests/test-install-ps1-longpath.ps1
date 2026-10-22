@@ -288,7 +288,17 @@ foreach ($name in @('TEMP', 'TMP', 'LOCALAPPDATA', 'APPDATA', 'USERPROFILE')) {
 # This is the difference between "the build works" and "the installer stops
 # claiming a successful build failed". Composed with literal backslashes
 # because that is how install.ps1 itself builds the default Windows path.
-$expectedInstallDir = "$($longRoot)${sep}AppData${sep}Local" + '\hermes\hermes-agent'
+# Compare the same installer with long-path inputs, preserving the product's
+# install suffix rather than freezing an upstream brand name.
+$longPaths = Invoke-Normalization @{
+    TEMP         = (Join-Parts @($longRoot, 'AppData', 'Local', 'Temp'))
+    TMP          = (Join-Parts @($longRoot, 'AppData', 'Local', 'Temp'))
+    LOCALAPPDATA = (Join-Parts @($longRoot, 'AppData', 'Local'))
+    APPDATA      = (Join-Parts @($longRoot, 'AppData', 'Roaming'))
+    USERPROFILE  = $longRoot
+}
+$expectedInstallDir = $longPaths.InstallDir
+Assert-Equal -Expected $true -Actual ($expectedInstallDir.StartsWith("$($longRoot)${sep}AppData${sep}Local${sep}")) -Label "long-path baseline remains under LOCALAPPDATA"
 Assert-Equal -Expected $expectedInstallDir -Actual $result.InstallDir -Label "InstallDir is re-derived from the long LOCALAPPDATA"
 
 Write-Host ""
