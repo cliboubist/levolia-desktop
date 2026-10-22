@@ -79,18 +79,18 @@ def brand_text(s: str) -> str:
 def rebrand_locales() -> None:
     for name in LOCALES:
         p = DESKTOP / "src" / "i18n" / f"{name}.ts"
-        s = brand_text(p.read_text())
+        s = brand_text(p.read_text(encoding="utf-8"))
         if name == "en":
             for a, b in {**EN_ONBOARDING, **EN_EXACT}.items():
                 s = s.replace(a, b)
-        p.write_text(s)
+        p.write_text(s, encoding="utf-8")
         print(f"rebranded {p.relative_to(ROOT)}")
 
 
 def rebrand_main_process() -> None:
     p = DESKTOP / "electron" / "main.ts"
     out = []
-    for line in p.read_text().split("\n"):
+    for line in p.read_text(encoding="utf-8").split("\n"):
         stripped = line.lstrip()
         if stripped.startswith("//") or stripped.startswith("*"):
             out.append(line)
@@ -100,7 +100,7 @@ def rebrand_main_process() -> None:
     s = s.replace("process.env.HERMES_DESKTOP_APP_NAME || 'Hermes'", "process.env.HERMES_DESKTOP_APP_NAME || 'Levolia'")
     # Wire-protocol identifiers must keep their upstream spelling.
     s = s.replace("X-Levolia-Session-Token", "X-Hermes-Session-Token").replace("X-Levolia-", "X-Hermes-")
-    p.write_text(s)
+    p.write_text(s, encoding="utf-8")
     print(f"rebranded {p.relative_to(ROOT)}")
 
 
@@ -109,13 +109,13 @@ def rebrand_tests() -> None:
         p = DESKTOP / rel
         if not p.exists():
             continue
-        s = brand_text(p.read_text())
+        s = brand_text(p.read_text(encoding="utf-8"))
         if rel.endswith("runtime.test.ts"):
             s = s.replace("Hermes 桌面版", "Levolia 桌面版")
         if rel.endswith("desktop-install-overlay.test.tsx"):
             s = s.replace("PlaceholderText('https://gateway.example.com/hermes')", "PlaceholderText('https://votre-entreprise.levolia.ai')")
             s = s.replace("'Gateway URL'", "'Server address'").replace("'Paste session token'", "'Paste access token'")
-        p.write_text(s)
+        p.write_text(s, encoding="utf-8")
         print(f"rebranded {p.relative_to(ROOT)}")
 
 
